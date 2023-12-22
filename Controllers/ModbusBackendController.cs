@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Mvc;
 using ModbusBackend.Models;
 using ModbusBackend.Repository;
 using NModbus;
@@ -9,18 +10,19 @@ namespace ModbusBackend.Controllers
 {
     [Route("/api/")]
     [ApiController]
-    public class ModbusBackendController : ControllerBase
+    public class ModbusBackendRawController : ControllerBase
     {
-        [HttpGet("getMatismartRecloserStatusRaw")]
+        [HttpGet("getMatismartRecloserStatus")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<MatismartRecloserStatusModel> GetMatismartRecloserStatusRaw([DefaultValue(Server.EportService)] Server server, byte slaveId)
+        public ActionResult<MatismartRecloserStatusModel> GetMatismartRecloserStatusRaw([DefaultValue("192.168.1.250")] string server, 
+            [DefaultValue(8899)] int port, byte slaveId)
         {
-            MatismartRequestRepository ModbusRequestRepository = new(server);
+            MatismartRequestRepository ModbusRequestRepository = new();
             try
             {
-                using TcpClient client = new(ModbusRequestRepository.IpAddress, ModbusRequestRepository.Port);
+                using TcpClient client = new(server, port);
                 try
                 {
                     var master = ModbusRequestRepository.InitializeModbusMaster(client);
@@ -31,8 +33,8 @@ namespace ModbusBackend.Controllers
                         {
                             var model = new MatismartRecloserStatusModel
                             {
-                                IpAddress = ModbusRequestRepository.IpAddress,
-                                Port = ModbusRequestRepository.Port,
+                                IpAddress = server,
+                                Port = port,
                                 SlaveId = slaveId,
                                 IsOpened = registers[0] == 6,
                                 Reference = "status read successfull"
@@ -54,16 +56,17 @@ namespace ModbusBackend.Controllers
         }
 
 
-        [HttpGet("setMatismartRecloserStatusRaw")]
+        [HttpGet("setMatismartRecloserStatus")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<bool> SetMatismartRecloserStatusRaw([DefaultValue(Server.EportService)] Server server, byte slaveId, [DefaultValue(true)] bool isOpened)
+        public ActionResult<bool> SetMatismartRecloserStatusRaw([DefaultValue("192.168.1.250")] string server,
+            [DefaultValue(8899)] int port, byte slaveId, [DefaultValue(true)] bool isOpened)
         {
-            MatismartRequestRepository ModbusRequestRepository = new(server);
+            MatismartRequestRepository ModbusRequestRepository = new();
             try
             {
-                using TcpClient client = new(ModbusRequestRepository.IpAddress, ModbusRequestRepository.Port);
+                using TcpClient client = new(server, port);
                 try
                 {
                     var master = ModbusRequestRepository.InitializeModbusMaster(client);
@@ -71,8 +74,8 @@ namespace ModbusBackend.Controllers
 
                     var model = new MatismartRecloserStatusModel
                     {
-                        IpAddress = ModbusRequestRepository.IpAddress,
-                        Port = ModbusRequestRepository.Port,
+                        IpAddress = server,
+                        Port = port,
                         SlaveId = slaveId,
                         IsOpened = isOpened,
                         Reference = (isOpened ? "turn on" : "turn off") + " was successful"
@@ -91,4 +94,5 @@ namespace ModbusBackend.Controllers
             }
         }
     }
+
 }
