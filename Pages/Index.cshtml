@@ -1,0 +1,26 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+    <li class="list-group-item">Первый этаж</li>
+    @foreach (var item in Model._matismartItemsRepository.items)
+    {
+         <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+                <div> ✅ ❌ @item.Comment </div>
+                <div>
+                    <button type="button" class="btn btn-primary btn-sm">Включить</button>
+                    <button type="button" class="btn btn-primary btn-sm">Выключить</button>
+                </div>
+            </div>
+        </li>
+    }
+    
+
+</div>
