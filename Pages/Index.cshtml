@@ -5,19 +5,86 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h2 class="display-4">Панель управления Modbus (rs485)</h2>
+    <p>Этот проект доступен на <a href="https://github.com/alldev/ModbusBackend">GitHub</a>.</p>
 
-    <li class="list-group-item">Первый этаж</li>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script>
+        const hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/callback")
+            .build();
+       
+        hubConnection.on("Receive", function(id, isOpened, isLoading) {
+            document.getElementById(id).innerHTML = (isLoading ? "" : (isOpened ? "✅" : "❌"));
+            if (isLoading)
+            {
+                document.getElementById(id+"-spinner").style.display = "initial";
+                document.getElementById(id+"-loading").style.display = "initial";
+                document.getElementById(id+"-turnon").style.display = "none";
+                document.getElementById(id+"-turnoff").style.display = "none";
+            } else
+            {
+                document.getElementById(id+"-spinner").style.display = "none";
+                document.getElementById(id+"-loading").style.display = "none";
+                if (isOpened)
+                {
+                    document.getElementById(id+"-turnon").style.display = "none";
+                    document.getElementById(id+"-turnoff").style.display = "initial";
+                }
+                else
+                {
+                    document.getElementById(id+"-turnon").style.display = "initial";
+                    document.getElementById(id+"-turnoff").style.display = "none";
+                }
+            }
+        });
+
+        hubConnection.start()
+            .then(function () {
+                document.getElementById("sendBtn").disabled = false;
+            })
+            .catch(function (err) {
+                return console.error(err.toString());
+            });
+
+        function sayHello(){
+            hubConnection.invoke("Send")
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+            setTimeout(sayHello, 1000);
+        }; sayHello();
+    </script>
+
     @foreach (var item in Model._matismartItemsRepository.items)
     {
-         <li class="list-group-item">
+         <li class="list-group-item pb-0">
             <div class="d-flex justify-content-between">
-                <div> ✅ ❌ @item.Comment </div>
-                <div>
-                    <button type="button" class="btn btn-primary btn-sm">Включить</button>
-                    <button type="button" class="btn btn-primary btn-sm">Выключить</button>
-                </div>
+                     <div class="d-flex pt-2">
+                        <div id="@item.DivName-spinner" style="display:@(item.IsLoading ? "initial" : "none")" class="spinner-border spinner-border-sm m-1" ></div>   
+                        <div class="d-inline-block" id="@item.DivName"> @(item.IsLoading ? "" : (item.IsOpened ? "✅" : "❌")) </div>
+                        <p>&nbsp;</p>
+                        <div class="d-inline-block" id="@item.DivName"> @item.NameOtherLanguage </div>
+                    </div>
+                    <div class="d-flex pt-1">
+                           <div class="d-inline-block">
+                             <form asp-page-handler="TurnOnClicked" method="post" asp-route-itemId="@item.SlaveId">
+                                <button class="btn btn-primary btn-sm" id="@item.DivName-loading" style="display:@(item.IsLoading ? "initial" : "none")" disabled>
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Загрузка...
+                                </button>
+                             </form>
+                           </div>
+                           <div class="d-inline-block">
+                             <form asp-page-handler="TurnOnClicked" method="post" asp-route-itemId="@item.SlaveId">
+                                <button class="btn btn-primary btn-sm" id="@item.DivName-turnon" style="display:@(item.IsLoading ? "none" : (item.IsOpened ? "none" : "initial"))">Включить</button>
+                             </form>
+                           </div>
+                           <div class="d-inline-block">
+                             <form asp-page-handler="TurnOffClicked" method="post" asp-route-itemId="@item.SlaveId">
+                                <button class="btn btn-primary btn-sm" id="@item.DivName-turnoff" style="display:@(item.IsLoading ? "none" : (item.IsOpened ? "initial" : "none"))">Выключить</button>
+                             </form>
+                           </div>
+                    </div>
             </div>
         </li>
     }

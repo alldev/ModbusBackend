@@ -1,3 +1,6 @@
+using ModbusBackend.Hubs;
+using ModbusBackend.Repository;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -5,6 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 builder.Services.AddControllers();
+
+
+
+builder.Services.AddSignalR();
+
+builder.Services.AddSingleton<IMatismartItemsRepository, MatismartItemsRepository>();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -22,6 +32,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
+app.MapHub<MatismartHub>("/callback");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

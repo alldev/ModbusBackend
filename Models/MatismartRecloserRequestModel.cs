@@ -1,15 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ModbusBackend.Models;
 using NModbus;
 using System.Net.Sockets;
 using System.Text.Json.Serialization;
 
-namespace ModbusBackend.Repository
+namespace ModbusBackend.Models
 {
 
-    public class MatismartRequestRepository
+    public class MatismartRecloserRequestModel
     {
-        public MatismartRequestRepository(){}
+        public MatismartRecloserRequestModel()
+        {
+
+        }
 
         public IModbusMaster InitializeModbusMaster(TcpClient client)
         {

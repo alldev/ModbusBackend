@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc;
 using ModbusBackend.Models;
-using ModbusBackend.Repository;
 using NModbus;
 using System.ComponentModel;
 using System.Net.Sockets;
@@ -10,7 +9,7 @@ namespace ModbusBackend.Controllers
 {
     [Route("/api/")]
     [ApiController]
-    public class ModbusBackendRawController : ControllerBase
+    public class MatismartBackendController : ControllerBase
     {
         [HttpGet("getMatismartRecloserStatus")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -19,7 +18,7 @@ namespace ModbusBackend.Controllers
         public ActionResult<MatismartRecloserStatusModel> GetMatismartRecloserStatusRaw([DefaultValue("192.168.1.250")] string server, 
             [DefaultValue(8899)] int port, byte slaveId)
         {
-            MatismartRequestRepository ModbusRequestRepository = new();
+            MatismartRecloserRequestModel ModbusRequestRepository = new();
             try
             {
                 using TcpClient client = new(server, port);
@@ -63,7 +62,7 @@ namespace ModbusBackend.Controllers
         public ActionResult<bool> SetMatismartRecloserStatusRaw([DefaultValue("192.168.1.250")] string server,
             [DefaultValue(8899)] int port, byte slaveId, [DefaultValue(true)] bool isOpened)
         {
-            MatismartRequestRepository ModbusRequestRepository = new();
+            MatismartRecloserRequestModel ModbusRequestRepository = new();
             try
             {
                 using TcpClient client = new(server, port);

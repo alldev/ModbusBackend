@@ -1,59 +1,79 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using ModbusBackend.Models;
 using ModbusBackend.Repository;
 using System.Net;
-using System.Text.Json.Nodes;
+using System.Net.Sockets;
+using System.Text.Json;
 
 namespace ModbusWeb.Pages
 {
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> _logger;
-        public readonly MatismartItemsRepository matismartItemsRepository;
+        public IMatismartItemsRepository _matismartItemsRepository;
 
-        public IndexModel(ILogger<IndexModel> logger)
+        public IndexModel(ILogger<IndexModel> logger, IMatismartItemsRepository matismartItemsRepository)
         {
             _logger = logger;
-            matismartItemsRepository = new();
+            _matismartItemsRepository = matismartItemsRepository;
         }
 
         public void OnGet()
         {
-            Thread workerThread = new(() =>
-            {
-                while (true)
-                {
+            Task.Factory.StartNew(() =>
+           {
+               while (true)
+               {
+                   foreach (var item in _matismartItemsRepository.items)
+                   {
+                       HttpClient client = new();
+                       var request = "http://localhost/api/getMatismartRecloserStatus?server=" + item.IpAddress + "&port=" + item.Port.ToString() + "&slaveId=" + item.SlaveId.ToString();
+                       // Console.WriteLine(request);
+                       client.GetAsync(request).ContinueWith(
+                           (requestTask) =>
+                           {
+                               HttpResponseMessage response = requestTask.Result;
+                               if (response.StatusCode == HttpStatusCode.OK)
+                               {
+                                   response.Content.ReadAsStringAsync().ContinueWith(
+                                               (readTask) =>
+                                               {
+                                                   var result = readTask.Result.ToString();
+                                                   JsonSerializerOptions options = new JsonSerializerOptions()
+                                                   {
+                                                       PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                                                   };
+                                                   var matismartRecloserStatus = JsonSerializer.Deserialize<MatismartRecloserStatusModel>(result, options);
+                                                   if (matismartRecloserStatus != null)
+                                                   {
+                                                       item.Status = matismartRecloserStatus.IsOpened ? RecloserStatus.TurnedOn : RecloserStatus.TurnedOff;
+                                                       foreach (var item in _matismartItemsRepository.items)
+                                                       {
+                                                           Console.Write(item.DivName + ":" + item.IsOpened.ToString() + " ");
+                                                       }
+                                                       Console.WriteLine(" ");
 
-                    /*
+                                                   }
+                                               });
+                               }
+                           });
+                       Thread.Sleep(500);
+                   }
+                   Thread.Sleep(1000);
+               }
+           }
+           );
+        }
 
-                    // Create an HttpClient instance 
-                    HttpClient client = new();
+        public void OnPostTurnOnClicked(byte slaveId, string ipAddress, string port)
+        {
+            Console.WriteLine("Turn on " + slaveId.ToString());
+        }
 
-                    // Send a request asynchronously continue when complete 
-                    client.GetAsync("http://localhost/api/FirstFloor/getGarageAndEntranceLightStatus").ContinueWith(
-                        (requestTask) =>
-                        {
-                            // Get HTTP response from completed task. 
-                            HttpResponseMessage response = requestTask.Result;
-
-                            // Check that response was successful or throw exception 
-                            response.EnsureSuccessStatusCode();
-
-                            // Read response asynchronously as JsonValue
-                            response.Content.ReadAsStringAsync().ContinueWith(
-                                        (readTask) =>
-                                        {
-                                            var result = readTask.Result.ToString();
-                                            Console.WriteLine(result);
-                                            //Do something with the result                   
-                                        });
-                        }); */
-
-                    Thread.Sleep(1000);
-                }
-            });
-
-            workerThread.Start();
+        public void OnPostTurnOffClicked(byte slaveId, string ipAddress, string port)
+        {
+            Console.WriteLine("Turn on " + slaveId.ToString());
         }
     }
 }
